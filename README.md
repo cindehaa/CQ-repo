@@ -18,7 +18,7 @@
 
 ## Introduction
 
-Welcome to our family recipe book, found at [cqrecipe.com](cqrecipe.com)!
+Welcome to our family recipe book, found at [https://cqrecipe.com/](https://cqrecipe.com/)
 
 Originally, all of our recipes had been written on paper, scattered in various notebooks around the house. Unsurprisingly, we'd find the recipes impossible to find when we had needed them. After the nth time of spending hours looking for a recipe, I decided to create a digital recipe book for my mom, now being used to store and share our family recipes!
 
