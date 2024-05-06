@@ -1,0 +1,150 @@
+<div id="addPageContainer">
+    <p-toast></p-toast>
+    <p-tabMenu [model]="menuItems"></p-tabMenu>
+
+    <h1>{{ labels.addRecipe | lang }}</h1>
+
+    <!-- Identifier Info -->
+    <div *ngIf="!isIdentifierEditable">
+        <p-panel class="danger" [toggleable]="true">
+            <ng-template pTemplate="header">
+                <i class="pi pi-exclamation-circle"></i>
+            </ng-template>
+            <p>Hi{{ identifier ? " " + identifier : "" }}! Unfortunately, you do not have permission to add, edit, or delete recipes - these
+                actions are reserved for CQ only. However, please feel free to view our family recipes and play around with the form inputs!</p>
+        </p-panel>
+        <br>
+        <br>    
+    </div>
+
+    <!-- Name -->
+    <div id="nameContainer" style="margin-bottom: 2rem;">
+        <span class="p-fluid">
+            <span class="p-float-label">
+                <input id="name" type="text" pInputText [(ngModel)]="name" [required]="true" autofocus />
+                <label for="name">Name</label>
+            </span>
+        </span>
+    </div>
+
+    <!-- Description -->
+    <div id="descriptionContainer" style="margin-bottom: 2rem;">
+        <span class="p-fluid">
+            <span class="p-float-label">
+                <textarea id="description" pInputTextarea [(ngModel)]="desc" [required]="false"></textarea>
+                <label for="description">Description (Optional)</label>
+            </span>
+        </span>
+    </div>
+
+    <!-- Time -->
+    <div id="timeContainer" style="margin-bottom: 2rem;">
+        <div class="row-container" style="display: flex; align-items: flex-start; margin-bottom: 2rem;">
+            <!-- Quantity -->
+            <div style="margin-right: 1rem; flex: 1">
+                <span class="p-fluid">
+                    <span class="p-float-label">
+                        <p-inputNumber [(ngModel)]="time.time" mode="decimal" [min]="0" [showButtons]="true"
+                            [minFractionDigits]="0" [maxFractionDigits]="4" [required]="true"></p-inputNumber>
+                        <label for="quantity">Time</label>
+                    </span>
+                </span>
+            </div>
+            <!-- Units -->
+            <div style="flex: 2">
+                <span class="p-fluid">
+                    <p-dropdown [options]="timeOptions" [(ngModel)]="time.unit" [showClear]="true"
+                        [editable]="true" emptyMessage="No suggestions found" [required]="true"></p-dropdown>
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ingredients -->
+    <div id="ingredientsContainer">
+        <ng-container *ngFor="let _ of [].constructor(selectedIngredientsCount); let i = index;">
+            <div id="ingredientRowContainer">
+
+                <div class="ingredientRowContainerRows">
+                    <!-- Name -->
+                    <div id="ingredientNameContainer">
+                        <span class="p-fluid">
+                            <span class="p-float-label">
+                                <p-autoComplete [(ngModel)]="selectedIngredients[i].name"
+                                    (ngModelChange)="updateSelectedIngredient(i)" [minLength]="1"
+                                    [suggestions]="filteredIngredients" (completeMethod)="filterIngredients($event)"
+                                    id="ingredients" [required]="true"></p-autoComplete>
+                                <label for="ingredients">Ingredient {{i+1}}</label>
+                            </span>
+                        </span>
+                    </div>
+
+                    <!-- Delete Button -->
+                    <p-button icon="pi pi-trash" (onClick)="onDeleteIngredient(i)"></p-button>
+                </div>
+
+                <div class="ingredientRowContainerRows">
+                    <!-- Quantity -->
+                    <div id="ingredientQuantityContainer">
+                        <span class="p-fluid">
+                            <span class="p-float-label">
+                                <p-inputNumber [(ngModel)]="selectedIngredients[i].amount" id="quantity" mode="decimal"
+                                    [min]="0" [showButtons]="true" [minFractionDigits]="0" [maxFractionDigits]="4"
+                                    [style]="{ minWidth: '100px'}"></p-inputNumber>
+                                <label for="quantity">Quantity</label>
+                            </span>
+                        </span>
+                    </div>
+
+                    <!-- Unit -->
+                    <div id="ingredientUnitContainer">
+                        <span class="p-fluid">
+                            <p-dropdown
+                                [options]="selectedIngredients[i].name ? getIngredientUnits(selectedIngredients[i].name) : []"
+                                [(ngModel)]="selectedIngredients[i].unit" [showClear]="true" [editable]="true"
+                                emptyMessage="No suggestions found"></p-dropdown>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </ng-container>
+
+        <p-button label="Add Ingredient" (onClick)="onAddIngredient()"></p-button>
+    </div>
+
+    <!-- Instructions -->
+    <div id="instructionsContainer" style="margin-bottom: 2rem;">
+        <span class="p-float-label">
+            <p-editor [(ngModel)]="instructions" [style]="{ height: '320px' }" placeholder="Instructions">
+                <ng-template pTemplate="header">
+                    <span class="ql-formats">
+                        <button type="button" class="ql-bold" aria-label="Bold"></button>
+                        <button type="button" class="ql-script" value="sub" aria-label="Subscript"></button>
+                        <button type="button" class="ql-script" value="super" aria-label="Superscript"></button>
+                        <button type="button" class="ql-list" value="ordered" aria-label="Bulleted list"></button>
+                        <button type="button" class="ql-list" value="bullet" aria-label="Numbered list"></button>
+                        <button type="button" class="ql-image" aria-label="Image"></button>
+
+                    </span>
+                </ng-template>
+            </p-editor>
+        </span>
+    </div>
+
+    <!-- Categories -->
+    <div id="tagsContainer" style="margin-bottom: 2rem;">
+        <span class="p-fluid">
+            <span class="p-float-label">
+                <p-autoComplete [(ngModel)]="tags" [multiple]="true" id="tags" [suggestions]="filteredTags"
+                    (completeMethod)="filterTags($event)"
+                    placeholder="Suggestions: Lunch, Chinese, Low-Fat, Easy, Holiday"></p-autoComplete>
+                <label for="tags">Categories (Optional)</label>
+            </span>
+        </span>
+    </div>
+
+    <!-- Submit -->
+    <div id="submitButtonContainer">
+        <p-button label="Submit" (onClick)="submitForm()" [disabled]="!formIsValid()"></p-button>
+    </div>
+</div>

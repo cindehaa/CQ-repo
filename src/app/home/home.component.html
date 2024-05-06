@@ -1,0 +1,33 @@
+<div class="homeContainer" [style]="{ 'background-image': 'url(' + imageUrl + ')'}">
+
+    <div class="homeContentContainer">
+        <h1>{{ labels.title | lang }}</h1>
+
+        <p>{{ labels.tagLine | lang }}</p>
+
+        <div id="enterContainer">
+            <p-button [style]="{'margin-right': '1rem'}" [label]="labels.enter | lang" routerLink="/view-recipes"
+                (click)="onEnter()"></p-button>
+
+            <span class="p-input-icon-left">
+                <i class="pi pi-user"></i>
+                <input aria-describedby="identifierHelp" id=identifierField type=text pInputText [(ngModel)]="editKey"
+                    placeholder="Your identifier (optional)" />
+            </span>
+        </div>
+
+        <br><br>
+
+        <p-card [style]="{'opacity': '0.7', 'maxWidth': '600px'}">
+            <p>
+                Note to people aside from CQ: Hi, welcome! The identifier is used for adding, editing, and deleting our family recipes - only CQ has it. However, you can view my site and our family recipes!
+            </p>
+        </p-card>
+
+    </div>
+
+    <footer>
+        <p>Version 0.0.2</p>
+    </footer>
+
+</div>

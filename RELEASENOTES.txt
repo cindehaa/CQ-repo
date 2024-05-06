@@ -1,0 +1,7 @@
+v0.0.2
+- Bug fix for time dropdown
+- UI improvements
+- Code clean-up
+
+v0.0.1
+- Initial release

@@ -1,0 +1,238 @@
+<div id="tableContainer">
+    <p-toast></p-toast>
+    <p-confirmDialog></p-confirmDialog>
+
+    <p-tabMenu [model]="menuItems"></p-tabMenu>
+
+    <h1>{{ labels.viewRecipes | lang }}</h1>
+    
+    <!-- Identifier Info -->
+    <div *ngIf="!isIdentifierEditable">
+        <p-panel class="danger" [toggleable]="true">
+            <ng-template pTemplate="header">
+                <i class="pi pi-exclamation-circle"></i>
+            </ng-template>
+            <p>Hi{{ identifier ? " " + identifier : "" }}! Unfortunately, you do not have permission to add, edit, or delete recipes - these
+                actions are reserved for CQ only. However, please feel free to view our family recipes and play around with the form inputs!</p>
+        </p-panel>
+        <br>
+        <br>    
+    </div>
+
+    <br>
+    <p-table #table [value]="recipes" [paginator]="true" [rows]="5" [first]="first" [rowsPerPageOptions]="[5, 10, 20]"
+        (onPage)="pageChange($event)" paginatorPosition="both" [globalFilterFields]="['name', 'desc', 'tags']"
+        [tableStyle]="">
+        <ng-template pTemplate="caption">
+            <div class="flex" style="text-align: center;">
+                <span class="p-input-icon-left ml-auto">
+                    <i class="pi pi-search"></i>
+                    <input pInputText type="text" (input)="filterInput($event, table)"
+                        placeholder="{{ labels.search | lang }}" />
+                </span>
+            </div>
+        </ng-template>
+        <ng-template pTemplate="body" let-recipe>
+            <tr>
+                <td>
+                    <p-card (click)="showSidebar(recipe)" [style]="{cursor: 'pointer'}">
+                        <h2 class="m-0">
+                            {{ recipe.name }}
+                        </h2>
+                        <p class="m-0">
+                            {{ recipe.desc ? recipe.desc : '' }}
+                        </p>
+                        <p class="m-0">
+                            <i class="pi pi-clock" style="font-size: 1rem"></i>
+                            {{ recipe.time.time ? recipe.time.time + ' ' + recipe.time.unit : 'N/A' }}
+                        </p>
+                        <p class="m-0">
+                            <strong>{{ labels.categories | lang }}: </strong>{{ recipe.tags ? recipe.tags.join(', ') :
+                            '' }}
+                        </p>
+                    </p-card>
+                </td>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+            <tr>
+                <td colspan="1">No recipes found :(</td>
+            </tr>
+        </ng-template>
+    </p-table>
+
+    <!-- Sidebar -->
+    <p-sidebar id="sideBar" [(visible)]="sidebarVisible" [fullScreen]="true" [style]="{'padding': '2rem', 'maxWidth': '600px'}">
+        <div>
+            <!-- Edit and delete buttons -->
+            <div id="buttonContainer">
+                <!-- Edit -->
+                <div *ngIf="!isEditing; else inEdit">
+                    <p-button icon="pi pi-pencil" (click)="onEditRecipe()"
+                        [style]="{'margin-right': '.5rem'}"></p-button>
+                </div>
+                <ng-template #inEdit>
+                    <!-- Save Changes -->
+                    <p-button icon="pi pi-save" [disabled]="!canSaveEdit()" (click)="onSaveRecipe()"
+                        [style]="{'margin-right': '.5rem'}"></p-button>
+                    <!-- Cancel Changes-->
+                    <p-button icon="pi pi-times" (click)="onCancelEdit()"
+                        [style]="{'margin-right': '.5rem'}"></p-button>
+                </ng-template>
+                <!-- Delete -->
+                <p-button icon="pi pi-trash" (click)="onDeleteRecipe(sidebarId)"
+                    styleClass="p-button-danger" [disabled]="!canDelete()"></p-button>
+            </div>
+
+            <!-- Name -->
+            <div *ngIf="isEditing; else outputName" style="margin-bottom: 2rem;">
+                <span class="p-fluid">
+                    <span class="p-float-label">
+                        <input id="name" type="text" pInputText [(ngModel)]="editName" [required]="true" autofocus />
+                        <label for="name">Name</label>
+                    </span>
+                </span>
+            </div>
+            <ng-template #outputName>
+                <h1>{{ sidebarName }}</h1>
+            </ng-template>
+
+            <!-- Description -->
+            <div *ngIf="isEditing; else outputDesc" style="margin-bottom: 2rem;">
+                <span class="p-fluid">
+                    <span class="p-float-label">
+                        <textarea id="description" pInputTextarea [(ngModel)]="editDesc" [required]="false"></textarea>
+                        <label for="description">Description (Optional)</label>
+                    </span>
+                </span>
+            </div>
+            <ng-template #outputDesc>
+                <p>{{ sidebarDesc }}</p>
+            </ng-template>
+
+            <!-- Time -->
+            <div *ngIf="isEditing; else outputTime" style="margin-bottom: 2rem;">
+                <div class="row-container" style="display: flex; align-items: flex-start; margin-bottom: 2rem;">
+                    <div style="margin-right: 1rem; flex: 1">
+                        <span class="p-fluid">
+                            <span class="p-float-label">
+                                <p-inputNumber [(ngModel)]="editTime.time" mode="decimal" [min]="0" [showButtons]="true"
+                                    [minFractionDigits]="0" [maxFractionDigits]="4" [required]="true"></p-inputNumber>
+                                <label for="quantity">Time</label>
+                            </span>
+                        </span>
+                    </div>
+                    <div style="flex: 2">
+                        <span class="p-fluid">
+                            <p-dropdown [options]="timeOptions" [(ngModel)]="editTime.unit"
+                                [showClear]="true" [editable]="true" emptyMessage="No suggestions found"
+                                [required]="true">
+                            </p-dropdown>
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <ng-template #outputTime>
+                <i class="pi pi-clock" style="font-size: 1rem"></i>
+                <span *ngIf="sidebarTime.time"> {{ sidebarTime.time + ' ' + sidebarTime.unit }}</span>
+                <span *ngIf="!sidebarTime.time">N/A</span>
+            </ng-template>
+
+            <!-- Ingredients -->
+            <div *ngIf="isEditing; else outputIngredients" id="ingredientsContainer">
+                <ng-container *ngFor="let _ of [].constructor(editIngredientsCount); let i = index;">
+                    <div id="ingredientRowContainer">
+
+                        <div class="ingredientRowContainerRows">
+                            <!-- Name -->
+                            <div id="ingredientNameContainer">
+                                <span class="p-fluid">
+                                    <span class="p-float-label">
+                                        <p-autoComplete [(ngModel)]="editIngredients[i].name"
+                                            [minLength]="1"
+                                            id="ingredients" [required]="true"></p-autoComplete>
+                                        <label for="ingredients">Ingredient {{i+1}}</label>
+                                    </span>
+                                </span>
+                            </div>
+        
+                            <!-- Delete Button -->
+                            <p-button icon="pi pi-trash" (onClick)="onDeleteIngredient(i)"></p-button>
+                        </div>
+        
+                        <div class="ingredientRowContainerRows">
+                            <!-- Quantity -->
+                            <div id="ingredientQuantityContainer">
+                                <span class="p-fluid">
+                                    <span class="p-float-label">
+                                        <p-inputNumber [(ngModel)]="editIngredients[i].amount" id="quantity" mode="decimal"
+                                            [min]="0" [showButtons]="true" [minFractionDigits]="0" [maxFractionDigits]="4"
+                                            [style]="{ minWidth: '100px'}"></p-inputNumber>
+                                        <label for="quantity">Quantity</label>
+                                    </span>
+                                </span>
+                            </div>
+        
+                            <!-- Unit -->
+                            <div id="ingredientUnitContainer">
+                                <span class="p-fluid">
+                                    <span class="p-float-label">
+                                        <input pInputText [(ngModel)]="editIngredients[i].unit" id="unit" />
+                                        <label for="unit">Unit</label>
+                                    </span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </ng-container>
+                <p-button label="Add Ingredient" (onClick)="onAddIngredient()"></p-button>
+            </div>
+            <ng-template #outputIngredients>
+                <h3>Ingredients</h3>
+                <ul>
+                    <li *ngFor="let ingredient of sidebarIngredients">{{ ingredient.name }} ({{ ingredient.amount }} {{
+                        ingredient.unit }})</li>
+                </ul>
+            </ng-template>
+
+            <!-- Instructions -->
+            <div *ngIf="isEditing; else outputInstructions" style="margin-bottom: 2rem;">
+                <span class="p-float-label">
+                    <p-editor [(ngModel)]="editInstructions" [style]="{ height: '320px' }" placeholder="Instructions">
+                        <ng-template pTemplate="header">
+                            <span class="ql-formats">
+                                <button type="button" class="ql-bold" aria-label="Bold"></button>
+                                <button type="button" class="ql-script" value="sub" aria-label="Subscript"></button>
+                                <button type="button" class="ql-script" value="super" aria-label="Superscript"></button>
+                                <button type="button" class="ql-list" value="ordered"
+                                    aria-label="Bulleted list"></button>
+                                <button type="button" class="ql-list" value="bullet"
+                                    aria-label="Numbered list"></button>
+                                <button type="button" class="ql-image" aria-label="Image"></button>
+
+                            </span>
+                        </ng-template>
+                    </p-editor>
+                </span>
+            </div>
+            <ng-template #outputInstructions>
+                <h3>Instructions</h3>
+                <div [innerHTML]="sidebarInstructions ? sidebarInstructions : 'No instructions available'"></div>
+            </ng-template>
+
+            <!-- Tags -->
+            <div *ngIf="isEditing; else outputTags" style="margin-bottom: 2rem;">
+                <span class="p-fluid">
+                    <span class="p-float-label">
+                        <p-chips [(ngModel)]="editTags" id="tags"></p-chips>
+                        <label for="tags">Categories (Optional)</label>
+                    </span>
+                </span>
+            </div>
+            <ng-template #outputTags>
+                <h3>Categories</h3>
+                <p>{{ sidebarTags.join(', ') }}</p>
+            </ng-template>
+        </div>
+    </p-sidebar>
+</div>
